@@ -1,6 +1,4 @@
-﻿using mediun8_1_4.Interfaces;
-using mediun8_1_4.Models.Transport;
-using mediun8_1_4.Models.Weapont;
+﻿using mediun8_1_4.Models.Weapont;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,22 +7,28 @@ namespace mediun8_1_4
 {
     public class Player
     {
-        public event EventHandler OnMove;
-        public event EventHandler OnAttack;
+        public event Action<Transport> PlayerMoved;
+        public event Action<Weapont> PlayerAttacked;
 
         public string Name { get; private set; }
         public int Age { get; private set; }
 
-        public ITransport Transport { get; set; }
-        public IWeapont Weapont { get; set; }
+        public Transport Transport { get; set; }
+        public Weapont Weapont { get; set; }
 
         public Player(string name, int age)
         {
+            if (string.IsNullOrWhiteSpace(name))
+                new ArgumentNullException(nameof(name));
+
+            if (age < 16 || age > 100)
+                new ArgumentOutOfRangeException(nameof(age));
+
             Name = name;
             Age = age;
 
-            Transport = new Foot();
-            Weapont = new Fists();
+            Transport = new Transport("Foots", 2f);
+            Weapont = new Weapont("Fists", 1, 2);
         }
 
         public void Move(MovementDirection movementDirection)
@@ -34,14 +38,14 @@ namespace mediun8_1_4
 
             switch (movementDirection)
             {
-                case MovementDirection.Forward: { MovementDirectionY = 1.0f;  } break; 
+                case MovementDirection.Forward: { MovementDirectionY =  1.0f; } break; 
                 case MovementDirection.Back:    { MovementDirectionY = -1.0f; } break;
                 case MovementDirection.Left:    { MovementDirectionX = -1.0f; } break;
-                case MovementDirection.Right:   { MovementDirectionX = 1.0f;  } break;
+                case MovementDirection.Right:   { MovementDirectionX =  1.0f; } break;
             }
 
             Transport.Move(MovementDirectionX, MovementDirectionY);
-            OnMove?.Invoke(Transport, EventArgs.Empty);
+            PlayerMoved?.Invoke(Transport);
         }
 
         public void Attack()
@@ -49,8 +53,9 @@ namespace mediun8_1_4
             if (!Weapont.IsReloading())
                 Weapont.Attack();
 
-            OnAttack?.Invoke(Weapont, EventArgs.Empty);
+            PlayerAttacked?.Invoke(Weapont);
         }
+
         public void ReloadWeapont()
         {
             Weapont.TryReload();
